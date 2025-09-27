@@ -11,6 +11,7 @@ public class HapticButtonReader : MonoBehaviour
 {
     ROSConnection ros;
     public GameObject collider;
+    private int button_pressed;
     private float publishMessageFrequency = 0.008f;
     private float timeElapsed;
     
@@ -29,7 +30,8 @@ public class HapticButtonReader : MonoBehaviour
     void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
-        ros.RegisterPublisher<HapticInfoMsg>("haptic_info");
+        ros.RegisterPublisher<PoseStampedMsg>("haptic_position");
+        ros.RegisterPublisher<Int32Msg>("button_pressed");
 
         // Vérifier que la référence à HapticPlugin est définie
         if (hapticPlugin == null)
@@ -42,17 +44,16 @@ public class HapticButtonReader : MonoBehaviour
         }
     }
 
-    private void PublishHapticInfo(Int32Msg msg)
+    private void PublishPosition()
     {
-        int buttonNumber = msg.data;
-
         Vector3 colliderPosition = collider.transform.position;
         Quaternion colliderRotation = collider.transform.rotation;
+        var now = System.DateTime.UtcNow;
 
         TimeMsg rostime = new TimeMsg
         {
-            sec = (int)Time.time,
-            nanosec = (uint)((Time.time % 1) * 1e9)
+            sec = (int)(now.Subtract(new System.DateTime(1970,1,1))).TotalSeconds,
+            nanosec = (uint)((now.Ticks % System.TimeSpan.TicksPerSecond) * 100)
         };
 
         PoseStampedMsg colliderPoseStamped = new PoseStampedMsg
@@ -68,14 +69,15 @@ public class HapticButtonReader : MonoBehaviour
             )
         };
 
-        HapticInfoMsg hapticInfo = new HapticInfoMsg
-        {
-            button = buttonNumber,
-            pose = colliderPoseStamped
-        };
-
         ros.Publish("haptic_position", colliderPoseStamped);
         
+    }
+
+    private void ButtonPressed(Int32Msg msg)
+    {
+        button_pressed = msg.data;
+        ros.Publish("button_pressed", new Int32Msg(button_pressed));
+        Debug.Log($"HapticButtonReader : Bouton {button_pressed} pressé.");
     }
         
     private void Update()
@@ -105,13 +107,14 @@ public class HapticButtonReader : MonoBehaviour
         // Traiter les événements des boutons
         if (buttons[0] == 1)
         {
-            PublishHapticInfo(new Int32Msg(1));
+            ButtonPressed(new Int32Msg(1));
+            PublishPosition();
         }
 
         if (buttons[1] == 1 && !button2Pressed)
         {
             button2Pressed = true;
-            PublishHapticInfo(new Int32Msg(2));
+            ButtonPressed(new Int32Msg(2));
         }
         else if (buttons[1] == 0 && button2Pressed)
         {
@@ -120,7 +123,8 @@ public class HapticButtonReader : MonoBehaviour
 
         if (buttons[0] == 0 && buttons[1] == 0)
             {
-                PublishHapticInfo(new Int32Msg(0));
+                ros.Publish("button_pressed", new Int32Msg(0));
+                Debug.Log("HapticButtonReader : Aucun bouton pressé.");
             }
     }
 }
