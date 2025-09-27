@@ -10,7 +10,7 @@ Le package ROS2 `unity_robotics_ira2` gère la communication et le contrôle, ta
 - **ROS2** : Version Jazzy Jalisco (installée via [guide officiel](https://docs.ros.org/en/jazzy/Installation.html)).
 - **Unity** : Version 2022.3 LTS (pour compatibilité XR).
 - **Hardware** :
-  - Robot UR3e avec contrôleur e-Series. Installation du driver Universal Robots pour ROS2 (vers [ici](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver/tree/jazzy))
+  - Robot UR3e avec contrôleur e-Series. Installation du driver Universal Robots pour ROS2 (vers [ici](https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver/tree/jazzy)) et de l'interface RTDE (vers [ici](https://sdurobotics.gitlab.io/ur_rtde/installation/installation.html)).
   - Bras haptique 3D Systems Touch avec pilotes installés.
   - Meta Quest 2 avec Oculus app.
 - **Réseau** : Tous les composants sur le même sous-réseau
