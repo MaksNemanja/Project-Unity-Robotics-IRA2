@@ -15,12 +15,16 @@ find_package(tf2 REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(ur_rtde REQUIRED)
-find_package(Eigen3 REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 
 # Install message files
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HapticInfo.msg"
+  "msg/PosRot.msg"
+  "msg/UnityColor.msg"
+  "srv/PositionService.srv"
+  "srv/ObjectPoseService.srv"
   DEPENDENCIES builtin_interfaces std_msgs geometry_msgs
 )
 
@@ -33,6 +37,8 @@ add_executable(robot_control src/robot_control.cpp)
 add_executable(joints_sub src/joints_sub.cpp)
 add_executable(haptic_control src/haptic_control.cpp)
 add_executable(get_force src/get_force.cpp)
+add_executable(color_publisher src/color_publisher.cpp)
+add_executable(position_service src/position_service.cpp)
 
 # Define dependencies for each executable
 ament_target_dependencies(unity_control
@@ -46,13 +52,16 @@ ament_target_dependencies(unity_control_v2
   rclcpp 
   geometry_msgs
   std_msgs
+  ur_rtde
   tf2
 )
 
 
 ament_target_dependencies(robot_control 
   rclcpp 
-  std_msgs
+  ur_rtde
+  geometry_msgs
+  tf2
 )
 
 
@@ -60,6 +69,7 @@ ament_target_dependencies(joints_sub
   rclcpp 
   sensor_msgs
   ur_rtde
+  std_msgs
 )
 
 ament_target_dependencies(haptic_control
@@ -78,9 +88,20 @@ add_dependencies(haptic_control ${PROJECT_NAME}__rosidl_generator_cpp)
 ament_target_dependencies(get_force 
   rclcpp 
   geometry_msgs
-  tf2
-  Eigen3
 )
+
+ament_target_dependencies(color_publisher 
+  rclcpp 
+  std_msgs
+)
+add_dependencies(color_publisher ${PROJECT_NAME}__rosidl_generator_cpp)
+
+ament_target_dependencies(position_service 
+  rclcpp 
+  geometry_msgs
+  std_msgs
+)
+add_dependencies(position_service ${PROJECT_NAME}__rosidl_generator_cpp)
 
 # Install executables
 install(TARGETS
@@ -90,16 +111,26 @@ install(TARGETS
   joints_sub
   haptic_control
   get_force
+  color_publisher
+  position_service
   DESTINATION lib/${PROJECT_NAME}
 )
 
 rosidl_target_interfaces(haptic_control
   ${PROJECT_NAME} "rosidl_typesupport_cpp"
 )
+rosidl_target_interfaces(color_publisher
+  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
+rosidl_target_interfaces(position_service
+  ${PROJECT_NAME} "rosidl_typesupport_cpp"
+)
+
 target_link_libraries(haptic_control ur_rtde::rtde)
 target_link_libraries(joints_sub ur_rtde::rtde)
-target_include_directories(get_force PUBLIC ${EIGEN3_INCLUDE_DIRS})
-
+target_link_libraries(robot_control ur_rtde::rtde)
+target_link_libraries(unity_control_v2 ur_rtde::rtde)
+target_link_libraries(get_force ur_rtde::rtde)
 
 
 if(BUILD_TESTING)
