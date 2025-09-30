@@ -40,18 +40,6 @@ public:
 
   ~HapticControl()
   {
-    // Save latencies and errors to CSV files
-    std::ofstream out("latencies.csv");
-    for (double lat : latencies_) {
-      out << lat << "\n";
-    }
-    out.close();
-
-    std::ofstream out2("pose_errors.csv");
-    for (auto err : pose_errors_) {
-      out2 << err.first << "," << err.second << "\n";
-    }
-    out2.close();
     gripper.disconnect();
     rtde_control.servoStop();
     rtde_control.stopScript();
@@ -216,30 +204,6 @@ private:
       rtde_control.servoL({target[0], target[1], target[2], target[3], target[4], target[5]},
                           velocity, acceleration, dt, lookahead_time, gain);
       rtde_control.waitPeriod(t_start);
-
-      rclcpp::Time now = this->now();
-      // latency calculation
-      double latency = (now - msg_time).seconds();
-      latencies_.push_back(latency);
-      if (latencies_.size() > 1500) {
-        latencies_.erase(latencies_.begin());
-      }
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
-      std::vector<double> new_tcp_pose = rtde_receive.getActualTCPPose();
-
-      double position_error = std::sqrt(std::pow(new_tcp_pose[0] - target[0], 2) +
-                                        std::pow(new_tcp_pose[1] - target[1], 2) +
-                                        std::pow(new_tcp_pose[2] - target[2], 2));
-
-      double orientation_error = std::sqrt(std::pow(new_tcp_pose[3] - target[3], 2) +
-                                            std::pow(new_tcp_pose[4] - target[4], 2) +
-                                            std::pow(new_tcp_pose[5] - target[5], 2));
-        
-      pose_errors_.push_back({position_error, orientation_error});
-      if (pose_errors_.size() > 1500) {
-        pose_errors_.erase(pose_errors_.begin());
-      }
     }
   }
 
@@ -258,9 +222,6 @@ private:
   std::vector<double> current_orientation_;
   std::vector<double> ref_pos_robot_;
   std::vector<double> ref_ori_robot_;
-  std::vector<double> init_force_;
-  std::vector<double> latencies_;
-  std::vector<std::pair<double, double>> pose_errors_;
   // Paramètres de contrôle
   double velocity, acceleration, dt, lookahead_time, gain;
 
